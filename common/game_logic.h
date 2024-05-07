@@ -13,16 +13,9 @@
 #define BORDER '|'
 #define PLAYER 'P'
 
-// Структура для представления позиции на поле
+// Структура для хранения игрока
 typedef struct {
-    int x;
-    int y;
-} Position;
-
-// Структура для представления игрока
-typedef struct {
-    int id;
-    Position position;
+    int x, y;
     char direction;
     int score;
 } Player;
@@ -36,13 +29,24 @@ void generate_map();
 // Отображение карты
 void display_map();
 
-// Проверка возможности движения в заданном направлении
-bool can_move(Player *player, char direction);
+// Функция для обработки пользовательского ввода и изменения направления игрока
+void handle_input(Player *player);
 
-// Обработка движения игрока
-void move_player(Player *player);
+// Функция для проверки возможности перемещения игрока
+bool can_move(Player player, char map[MAP_HEIGHT][MAP_WIDTH]);
 
-// Обновление состояния игры
-void update_game();
+// Функция для перемещения игрока
+void move_player(Player *player, char map[MAP_HEIGHT][MAP_WIDTH]);
+
+// Функция для обновления состояния игры
+void update_game(Player *players, int num_players, char map[MAP_HEIGHT][MAP_WIDTH]);
+
+// Функция для проверки условий завершения игры
+bool is_game_over(char map[MAP_HEIGHT][MAP_WIDTH]);
+
+// Функция для определения победителя или объявления ничьи
+void determine_winner(Player *players, int num_players);
+
+
 
 #endif /* GAME_LOGIC_H */
