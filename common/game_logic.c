@@ -10,16 +10,10 @@
 char map[MAP_HEIGHT + 4][MAP_WIDTH + 4];
 
 // Игроки
-//Player players[MAX_PLAYERS];
+Player players[MAX_PLAYERS];
 
 // Количество игроков
-int num_players = 0;
-
-// Инициализация игры
-void initialize_game() {
-    // Генерация игровой карты
-    generate_map();
-}
+int num_players = 0;dawsd
 
 int random_number(){
 
@@ -104,23 +98,40 @@ void display_map() {
 // Функция для установки терминальных настроек для немедленного считывания клавиш
 void enable_raw_mode() {
     struct termios term;
-    tcgetattr(STDIN_FILENO, &term);
+    if (tcgetattr(STDIN_FILENO, &term) == -1) {
+        perror("tcgetattr");
+        exit(1);
+    }
     term.c_lflag &= ~(ICANON | ECHO); // Отключаем канонический режим и эхо
-    tcsetattr(STDIN_FILENO, TCSANOW, &term);
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &term) == -1) {
+        perror("tcsetattr");
+        exit(1);
+    }
 }
 
 // Функция для восстановления обычных терминальных настроек
 void disable_raw_mode() {
     struct termios term;
-    tcgetattr(STDIN_FILENO, &term);
+    if (tcgetattr(STDIN_FILENO, &term) == -1) {
+        perror("tcgetattr");
+        exit(1);
+    }
     term.c_lflag |= (ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &term);
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &term) == -1) {
+        perror("tcsetattr");
+        exit(1);
+    }
 }
 
-// Пример функции обработки ввода с использованием немедленного считывания
+// Функция для получения символа с клавиатуры
 char get_key_press() {
     char ch;
-    read(STDIN_FILENO, &ch, 1);
+    enable_raw_mode();
+    if (read(STDIN_FILENO, &ch, 1) != 1) {
+        perror("read");
+        exit(1);
+    }
+    disable_raw_mode();
     return ch;
 }
 
@@ -143,7 +154,7 @@ void handle_input(Player *player) {
 }
 
 // Функция для проверки возможности перемещения игрока
-bool can_move(Player player, char map[MAP_HEIGHT][MAP_WIDTH]) {
+bool can_move(Player player, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]) {
     int dx = 0, dy = 0;
 
     // Определяем изменение координат в соответствии с направлением
@@ -166,11 +177,11 @@ bool can_move(Player player, char map[MAP_HEIGHT][MAP_WIDTH]) {
     int new_x = player.x + dx;
     int new_y = player.y + dy;
     return (new_x >= 0 && new_x < MAP_WIDTH && new_y >= 0 && new_y < MAP_HEIGHT &&
-            map[new_y][new_x] != WALL);
+            map[new_y][new_x] != WALL && map[new_y][new_x] != BORDER);
 }
 
 // Функция для перемещения игрока
-void move_player(Player *player, char map[MAP_HEIGHT][MAP_WIDTH]) {
+void move_player(Player *player, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]) {
     if (can_move(*player, map)) {
         // Если перемещение возможно, обновляем координаты игрока
         switch (player->direction) {
@@ -195,7 +206,7 @@ void move_player(Player *player, char map[MAP_HEIGHT][MAP_WIDTH]) {
 }
 
 // Функция для обновления состояния игры
-void update_game(Player *players, int num_players, char map[MAP_HEIGHT][MAP_WIDTH]) {
+void update_game(Player *players, int num_players, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]) {
     // Проверяем условия завершения игры
     if (is_game_over(map)) {
         // Определяем победителя или объявляем ничью
@@ -217,7 +228,7 @@ void update_game(Player *players, int num_players, char map[MAP_HEIGHT][MAP_WIDT
 }
 
 // Функция для проверки условий завершения игры
-bool is_game_over(char map[MAP_HEIGHT][MAP_WIDTH]) {
+bool is_game_over(char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]) {
     // Проверяем, остались ли клетки с едой на карте
     for (int y = 0; y < MAP_HEIGHT; y++) {
         for (int x = 0; x < MAP_WIDTH; x++) {
@@ -254,7 +265,31 @@ void determine_winner(Player *players, int num_players) {
     }
 }
 
-int main(){
+void initialize_game() {
+    // Создаем игрока
+    players[0].x = 0; // Установка начальной позиции игрока по X
+    players[0].y = 0; // Установка начальной позиции игрока по Y
+    players[0].direction = 'd'; // Устанавливаем начальное направление движения игрока
+    players[0].score = 0; // Устанавливаем начальное количество очков игрока
+
+    // Устанавливаем количество игроков в 1
+    num_players = 1;
+
+    // Генерируем и отображаем игровую карту
     generate_map();
     display_map();
+}
+
+int main(){
+    initialize_game();
+
+    while (!is_game_over(map)) {
+        display_map();
+        update_game(&players[0], num_players, map);
+        usleep(100000); // Пауза на 100 мс, чтобы замедлить игру
+    }
+
+    determine_winner(&players[0], num_players);
+
+    return 0;
 }

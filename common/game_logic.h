@@ -20,6 +20,8 @@ typedef struct {
     int score;
 } Player;
 
+#define MAX_PLAYERS 4
+
 // Инициализация игры
 void initialize_game();
 
@@ -33,20 +35,18 @@ void display_map();
 void handle_input(Player *player);
 
 // Функция для проверки возможности перемещения игрока
-bool can_move(Player player, char map[MAP_HEIGHT][MAP_WIDTH]);
+bool can_move(Player player, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]);
 
 // Функция для перемещения игрока
-void move_player(Player *player, char map[MAP_HEIGHT][MAP_WIDTH]);
+void move_player(Player *player, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]);
 
 // Функция для обновления состояния игры
-void update_game(Player *players, int num_players, char map[MAP_HEIGHT][MAP_WIDTH]);
+void update_game(Player *players, int num_players, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]);
 
 // Функция для проверки условий завершения игры
-bool is_game_over(char map[MAP_HEIGHT][MAP_WIDTH]);
+bool is_game_over(char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]);
 
 // Функция для определения победителя или объявления ничьи
 void determine_winner(Player *players, int num_players);
-
-
 
 #endif /* GAME_LOGIC_H */
