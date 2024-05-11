@@ -45,6 +45,17 @@ void generate_map() {
         }
     }
 
+    while(1){
+
+        int start_x = rand() % 20;
+        int start_y = rand() % 15;
+
+        if (sub_map[start_y][start_x] == '.'){
+            sub_map[start_y][start_x] = PLAYER;
+            break;
+        }
+    }
+
     // Заполнение всей карты на основе sub_map
     for (int i = 0; i < MAP_HEIGHT / 2; i++) {
         for (int j = 0; j < MAP_WIDTH / 2; j++) {
@@ -90,17 +101,15 @@ void draw_map(char map[MAP_HEIGHT][MAP_WIDTH]) {
                 case FOOD:
                     putchar(FOOD);
                     break;
+                case PLAYER:
+                    putchar(PLAYER);
+                    break;
                 default:
                     putchar(' '); // Выводим пробел для пустых мест
                     break;
             }
         }
         putchar('\n'); // Переходим на новую строку после каждой строки карты
-    }
-
-    // Рисуем игроков
-    for (int k = 0; k < num_players; k++) {
-        putchar(players[k].direction); // Просто выводим символ игрока без управляющих кодов
     }
 }
 
@@ -186,7 +195,7 @@ bool can_move(Player player, char map[MAP_HEIGHT][MAP_WIDTH]) {
     int new_x = player.x + dx;
     int new_y = player.y + dy;
     return (new_x >= 0 && new_x < MAP_WIDTH && new_y >= 0 && new_y < MAP_HEIGHT &&
-            map[new_y][new_x] != WALL && map[new_y][new_x] != WALL);
+            map[new_y][new_x] != WALL);
 }
 
 // Функция для перемещения игрока
@@ -274,30 +283,45 @@ void determine_winner(Player *players, int num_players) {
 }
 
 void initialize_game() {
-    // Создаем игрока
-    players[0].x = 0; // Установка начальной позиции игрока по X
-    players[0].y = 0; // Установка начальной позиции игрока по Y
-    players[0].direction = 'd'; // Устанавливаем начальное направление движения игрока
-    players[0].score = 0; // Устанавливаем начальное количество очков игрока
-
-    // Устанавливаем количество игроков в 1
-    num_players = 1;
+    // Устанавливаем количество игроков
+    num_players = MAX_PLAYERS;
 
     // Генерируем и отображаем игровую карту
     generate_map();
+
+    // Инициализация переменной для отслеживания числа найденных стартовых позиций
+    int start_positions = 0;
+
+    // Поиск стартовых позиций 'S' и размещение игроков
+    for (int y = 0; y < MAP_HEIGHT; y++) {
+        for (int x = 0; x < MAP_WIDTH; x++) {
+            if (map[y][x] == "P" && start_positions < num_players) {
+                players[start_positions].x = x;
+                players[start_positions].y = y;
+                players[start_positions].direction = "d"; // Начальное направление движения
+                players[start_positions].score = 0; // Начальное количество очков
+                start_positions++;
+            }
+        }
+    }
+
+    // Отрисовка карты после размещения игроков
     draw_map(map);
 }
 
-int main(){
+
+int main() {
     initialize_game();
 
+
+    // Игровой цикл продолжается, пока игра не будет завершена
     while (!is_game_over(map)) {
-        draw_map(map);
-        update_game(&players[0], num_players, map);
-        usleep(100000); // Пауза на 100 мс, чтобы замедлить игру
+        draw_map(map); // Отображаем карту
+        update_game(players, num_players, map); // Обновляем игру: обработка ввода и перемещение игроков
+        usleep(100000); // Задержка для контроля скорости игры (100 миллисекунд)
     }
 
-    determine_winner(&players[0], num_players);
+    determine_winner(players, num_players); // Определяем победителя игры
 
-    return 0;
+    return 0; // Завершаем программу с кодом 0
 }
