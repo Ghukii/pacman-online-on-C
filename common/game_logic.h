@@ -4,8 +4,8 @@
 #include <stdbool.h>
 
 // Размеры игрового поля
-#define MAP_WIDTH 40
-#define MAP_HEIGHT 30
+#define MAP_WIDTH 44
+#define MAP_HEIGHT 34
 
 // Определение клеток поля
 #define WALL '#'
@@ -35,18 +35,20 @@ void display_map();
 void handle_input(Player *player);
 
 // Функция для проверки возможности перемещения игрока
-bool can_move(Player player, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]);
+bool can_move(Player player, char map[MAP_HEIGHT][MAP_WIDTH]);
 
 // Функция для перемещения игрока
-void move_player(Player *player, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]);
+void move_player(Player *player, char map[MAP_HEIGHT][MAP_WIDTH]);
 
 // Функция для обновления состояния игры
-void update_game(Player *players, int num_players, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]);
+void update_game(Player *players, int num_players, char map[MAP_HEIGHT][MAP_WIDTH]);
 
 // Функция для проверки условий завершения игры
-bool is_game_over(char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]);
+bool is_game_over(char map[MAP_HEIGHT][MAP_WIDTH]);
 
 // Функция для определения победителя или объявления ничьи
 void determine_winner(Player *players, int num_players);
+
+void print_map(char map[MAP_HEIGHT][MAP_WIDTH]);
 
 #endif /* GAME_LOGIC_H */

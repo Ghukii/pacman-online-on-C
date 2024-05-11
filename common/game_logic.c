@@ -5,15 +5,16 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <termios.h>
+#include <ncurses.h>
 
 // Массив для хранения игровой карты
-char map[MAP_HEIGHT + 4][MAP_WIDTH + 4];
+char map[MAP_HEIGHT][MAP_WIDTH];
 
 // Игроки
 Player players[MAX_PLAYERS];
 
 // Количество игроков
-int num_players = 0;dawsd
+int num_players = 0;
 
 int random_number(){
 
@@ -29,69 +30,77 @@ int random_number(){
 
 // Генерация игровой карты
 void generate_map() {
-    // Здесь будет реализация алгоритма генерации карты
-
     srand(time(NULL));
 
-    char** sub_map = (char**)malloc((MAP_HEIGHT / 2 + 2) * sizeof(char*));
-
-    for(int i = 0; i < MAP_HEIGHT / 2 + 2; i++){
-
-        sub_map[i] = (char*)malloc((MAP_WIDTH / 2 + 2) * sizeof(char));
-
-        if (i == 0 || i == MAP_HEIGHT / 2 + 1){
-            for(int j = 0; j < MAP_WIDTH / 2 + 2; j++){
-                sub_map[i][j] = BORDER;
+    // Инициализация части карты
+    char** sub_map = (char**)malloc((MAP_HEIGHT / 2) * sizeof(char*));
+    for (int i = 0; i < MAP_HEIGHT / 2; i++) {
+        sub_map[i] = (char*)malloc((MAP_WIDTH / 2) * sizeof(char));
+        for (int j = 0; j < MAP_WIDTH / 2; j++) {
+            if (i == 0 || j == 0 || i == MAP_HEIGHT / 2 - 1 || j == MAP_WIDTH / 2 - 1) {
+                sub_map[i][j] = WALL; // Установка стен на границах
+            } else {
+                sub_map[i][j] = (rand() % 3 >= 1) ? FOOD : WALL;
             }
         }
-        else{
-            sub_map[i][0] = BORDER;
-            for(int j = 1; j < MAP_WIDTH / 2 + 1; j++){
-                
-                if (rand() % 3 >= 1){
-                    sub_map[i][j] = FOOD;
-                }
-                else{
-                    sub_map[i][j] = WALL;
-                }
-            }
-            sub_map[i][MAP_WIDTH / 2 + 1] = BORDER;
+    }
+
+    // Заполнение всей карты на основе sub_map
+    for (int i = 0; i < MAP_HEIGHT / 2; i++) {
+        for (int j = 0; j < MAP_WIDTH / 2; j++) {
+            char value = sub_map[i][j];
+            // Заполнение первой четверти
+            map[i][j] = value;
+            // Отражение по горизонтали во вторую четверть
+            map[i][MAP_WIDTH - 1 - j] = value;
+            // Отражение по вертикали в третью четверть
+            map[MAP_HEIGHT - 1 - i][j] = value;
+            // Отражение в четвертую четверть
+            map[MAP_HEIGHT - 1 - i][MAP_WIDTH - 1 - j] = value;
         }
     }
 
-    while(1){
-
-        int start_x = rand() % 20;
-        int start_y = rand() % 15;
-
-        if (sub_map[start_y][start_x] == '.'){
-            sub_map[start_y][start_x] = 'S';
-            break;
-        }
+    // Освобождение памяти sub_map
+    for (int i = 0; i < MAP_HEIGHT / 2; i++) {
+        free(sub_map[i]);
     }
-
-    for (int i = 0; i < MAP_HEIGHT / 2 + 2; i++) {
-        for (int j = 0; j < MAP_WIDTH / 2 + 2; j++) {
-            // Отражение по вертикали (по горизонтали)
-            map[i][j] = sub_map[i][j];
-            map[i][MAP_WIDTH - j + 2] = sub_map[i][j];
-
-            // Отражение по горизонтали (по вертикали)
-            map[MAP_HEIGHT - i + 2][j] = sub_map[i][j];
-            map[MAP_HEIGHT - i + 2][MAP_WIDTH - j + 2] = sub_map[i][j];
-        }
-    }
-    // Нужно написать проверку доступности полей с едой!!!
+    free(sub_map);
 }
 
-// Отображение карты
-void display_map() {
-    // Здесь будет реализация вывода карты на экран
-    for (int i = 0; i < MAP_HEIGHT + 4; i++) {
-        for (int j = 0; j < MAP_WIDTH + 4; j++) {
-            printf("%c", map[i][j]);
+void print_map(char map[MAP_HEIGHT][MAP_WIDTH]){
+    for (int i = 0; i < MAP_HEIGHT; i++) {
+        for (int j = 0; j < MAP_WIDTH; j++) {
+            putchar(map[i][j]); // Выводим символ на экран   
         }
         printf("\n");
+    }
+}
+
+// Функция для отрисовки карты
+void draw_map(char map[MAP_HEIGHT][MAP_WIDTH]) {
+    system("clear"); // Очищаем экран
+
+    for (int i = 0; i < MAP_HEIGHT; i++) {
+        for (int j = 0; j < MAP_WIDTH; j++) {
+            char element = map[i][j];
+            switch (element) {
+                case WALL:
+                    putchar(WALL); // Используем putchar для увеличения производительности
+                    break;
+                case FOOD:
+                    putchar(FOOD);
+                    break;
+                default:
+                    putchar(' '); // Выводим пробел для пустых мест
+                    break;
+            }
+        }
+        putchar('\n'); // Переходим на новую строку после каждой строки карты
+    }
+
+    // Рисуем игроков
+    for (int k = 0; k < num_players; k++) {
+        putchar(players[k].direction); // Просто выводим символ игрока без управляющих кодов
     }
 }
 
@@ -154,7 +163,7 @@ void handle_input(Player *player) {
 }
 
 // Функция для проверки возможности перемещения игрока
-bool can_move(Player player, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]) {
+bool can_move(Player player, char map[MAP_HEIGHT][MAP_WIDTH]) {
     int dx = 0, dy = 0;
 
     // Определяем изменение координат в соответствии с направлением
@@ -177,11 +186,11 @@ bool can_move(Player player, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]) {
     int new_x = player.x + dx;
     int new_y = player.y + dy;
     return (new_x >= 0 && new_x < MAP_WIDTH && new_y >= 0 && new_y < MAP_HEIGHT &&
-            map[new_y][new_x] != WALL && map[new_y][new_x] != BORDER);
+            map[new_y][new_x] != WALL && map[new_y][new_x] != WALL);
 }
 
 // Функция для перемещения игрока
-void move_player(Player *player, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]) {
+void move_player(Player *player, char map[MAP_HEIGHT][MAP_WIDTH]) {
     if (can_move(*player, map)) {
         // Если перемещение возможно, обновляем координаты игрока
         switch (player->direction) {
@@ -206,13 +215,9 @@ void move_player(Player *player, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]) {
 }
 
 // Функция для обновления состояния игры
-void update_game(Player *players, int num_players, char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]) {
-    // Проверяем условия завершения игры
-    if (is_game_over(map)) {
-        // Определяем победителя или объявляем ничью
-        determine_winner(players, num_players);
-        exit(0);
-    }
+void update_game(Player *players, int num_players, char map[MAP_HEIGHT][MAP_WIDTH]) {
+    // Очищаем терминал
+    printf("\033[2J");
 
     // Обновляем состояние каждого игрока
     for (int i = 0; i < num_players; i++) {
@@ -225,10 +230,13 @@ void update_game(Player *players, int num_players, char map[MAP_HEIGHT + 4][MAP_
             map[players[i].y][players[i].x] = ' '; // Убираем еду с карты
         }
     }
+
+    // Отрисовываем обновленную карту
+    draw_map(map);
 }
 
 // Функция для проверки условий завершения игры
-bool is_game_over(char map[MAP_HEIGHT + 4][MAP_WIDTH + 4]) {
+bool is_game_over(char map[MAP_HEIGHT][MAP_WIDTH]) {
     // Проверяем, остались ли клетки с едой на карте
     for (int y = 0; y < MAP_HEIGHT; y++) {
         for (int x = 0; x < MAP_WIDTH; x++) {
@@ -277,14 +285,14 @@ void initialize_game() {
 
     // Генерируем и отображаем игровую карту
     generate_map();
-    display_map();
+    draw_map(map);
 }
 
 int main(){
     initialize_game();
 
     while (!is_game_over(map)) {
-        display_map();
+        draw_map(map);
         update_game(&players[0], num_players, map);
         usleep(100000); // Пауза на 100 мс, чтобы замедлить игру
     }
