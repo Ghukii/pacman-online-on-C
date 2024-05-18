@@ -230,13 +230,23 @@ void update_game(Player *players, int num_players, char map[MAP_HEIGHT][MAP_WIDT
 
     // Обновляем состояние каждого игрока
     for (int i = 0; i < num_players; i++) {
+        int old_x = players[i].x; // Сохраняем старую позицию X
+        int old_y = players[i].y; // Сохраняем старую позицию Y
+
         handle_input(&players[i]); // Обработка пользовательского ввода
         move_player(&players[i], map); // Перемещение игрока
+
+        // Очищаем старую позицию игрока на карте, если он переместился
+        if (old_x != players[i].x || old_y != players[i].y) {
+            map[old_y][old_x] = ' '; // Убираем символ игрока с старой позиции
+        }
 
         // Проверяем, попал ли игрок на клетку с едой
         if (map[players[i].y][players[i].x] == FOOD) {
             players[i].score++; // Увеличиваем счет игрока
-            map[players[i].y][players[i].x] = ' '; // Убираем еду с карты
+            map[players[i].y][players[i].x] = PLAYER; // Обновляем карту, ставим игрока в новую позицию
+        } else {
+            map[players[i].y][players[i].x] = PLAYER; // Просто ставим игрока в новую позицию, если нет еды
         }
     }
 
